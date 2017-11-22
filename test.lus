@@ -1,0 +1,59 @@
+const
+-- Boiler characteristics
+  N_pump = 4;
+  C = 30;    -- Maximal capacity
+  M1 = 10;   -- Minimal limit
+  M2 = 25;   -- Maximal limit
+  N1 = 10;   -- Minimal normal
+  N2 = 25;   -- Maximal normal
+-- Mode :
+  Initialization = 0;
+  Normal = 1;
+  Degraded = 2;
+  Rescue = 3;
+  Emergency_stop = 4;
+
+
+------------------------Boiler Controller Node-----------------
+-- a changer (0=Pump;1=PumpController;2=Water;3=steam;4=Transmission)
+
+node test(
+        steam_boiler_waiting : bool;
+        level:int;
+		    steam:int;
+        physical_units_ready:bool;
+        pump_state:int^N_pump;
+        pump_control_state:bool^N_pump;
+        Failures : bool^5)
+	returns (mode:int;
+          program_ready:bool;
+          open_pump:bool^N_pump;
+          close_pump:bool^N_pump;);
+
+let
+
+-- Transitions
+mode = Initialization -> if (steam_boiler_waiting and pre(mode)=Initialization) and (Failures[2] or steam<>0) then Emergency_stop
+                         else if (steam_boiler_waiting and pre(mode)=Initialization) and (level>N1 and level<N2 and physical_units_ready) then Normal
+                              else if (pre(mode)=Normal) and ((level>M2 or level<M1) or (Failures[4])) then Emergency_stop
+                                  else if (pre(mode)=Normal and Failures[2]) then Rescue
+                                       else if (pre(mode)=Normal) and (Failures[0] or Failures[1] or Failures[3]) then Degraded
+                                            else (Initialization->pre(mode));
+
+-- gestion des pompes
+open_pump[0..(N_pump-1)] = false^N_pump -> if (mode=Initialization and steam_boiler_waiting) and (level<N1 and pumpOFF( N_pump, pump_state)) then true^N_pump
+                                           else false^N_pump;
+close_pump[0..(N_pump-1)] = false^N_pump -> if (mode=Initialization and steam_boiler_waiting) and level>N1 and not(pumpOFF( N_pump, pump_state)) then true^N_pump
+                                            else false^N_pump;
+program_ready = false -> if (mode=Initialization) and (level>N1 and level<N2) then true
+                          else false;
+
+tel
+
+-- fonction recursive
+-- result = true si toutes les pompe sont off
+node pumpOFF(const n : int; pump: int^n) returns (result: bool);
+let
+  result = with n=1 then pump[0]=0
+          else (pump[0]=0 and pumpOFF(n-1, pump[1..n-1]));
+tel
