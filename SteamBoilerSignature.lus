@@ -1,0 +1,63 @@
+const
+-- Boiler characteristics
+  	N_pump = 4;
+
+	--Qté d'eau dans la chaudière
+	C=20; --capacité max chaudière
+	M1=19; --limite min
+	M2=1; --limite max
+	N1=18; -- normal min
+	N2=2; --mormal max
+
+	--Capacité pompes
+	P=12; --capacité de chaque pompes
+
+	--Mesures courantes
+	q; --quantité d'eau dans la bouilloire
+  
+
+------------------------Boiler Controller Node-----------------
+
+node BoilerController(stop,steam_boiler_waiting,physical_units_ready:bool; 
+		     level:int;
+                steam:int;
+		     valve_status:int;
+		     pump_state:int^N_pump;
+		     pump_control_state:bool^N_pump;
+		     pump_repaired:bool^N_pump;
+		     pump_control_repaired:bool^N_pump;
+		     level_repaired:bool;
+  		     steam_repaired:bool;
+		     pump_failure_acknowledgement:bool^N_pump;
+		     pump_control_failure_acknowledgement:bool^N_pump;
+ 		     level_failure_acknowledgement:bool;
+  		     steam_failure_acknowledgement:bool)
+	returns (program_ready:bool;
+		 mode:int;
+		 valve:bool;
+		 q:int;
+		 v:int;
+		 p:int^N_pump;
+		 n_pumps:int;
+		 open_pump:bool^N_pump;
+		 close_pump:bool^N_pump;
+		 pump_failure_detection:bool^N_pump;
+		 pump_control_failure_detection:bool^N_pump;
+		 level_failure_detection:bool;
+		 steam_outcome_failure_detection:bool;
+		 pump_repaired_acknowledgement:bool^N_pump;
+		 pump_control_repaired_acknowledgement:bool^N_pump;
+		 level_repaired_acknowledgement:bool;
+		 steam_outcome_repaired_acknowledgement:bool);
+
+	var mode:int  	--1 : mode initialisation
+			--2 : mode normal
+			--3 : mode dégragé
+			--4 : mode rescue
+			--5 : mode urgence
+let
+	mode=0 ->
+	valve = false -> if mode=1 and level>N2 then true;
+	
+					
+tel

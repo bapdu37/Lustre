@@ -1,0 +1,11 @@
+node Mode_Initialisation (steam_boiler_waiting:bool; 
+				physical_units_ready:bool;
+				level:int; steam:int; 
+				failure_water_level:bool) 
+		returns (valve:bool;
+				program_ready:bool;
+				Emergency:bool;
+				);
+let
+
+tel
