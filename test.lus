@@ -6,6 +6,7 @@ const
   M2 = 25;   -- Maximal limit
   N1 = 10;   -- Minimal normal
   N2 = 25;   -- Maximal normal
+  P = 5;     -- Capacité nominal de chaque pompe
 -- Mode :
   Initialization = 0;
   Normal = 1;
@@ -15,20 +16,24 @@ const
 
 
 ------------------------Boiler Controller Node-----------------
--- a changer (0=Pump;1=PumpController;2=Water_level;3=steam;4=Transmission)
+-- a changer failure : (0=Pump;1=PumpController;2=Water_level;3=mesure_pression_steam;4=Transmission)
 
 node test(
-        steam_boiler_waiting : bool;
-        level:int;
-		    steam:int;
-        physical_units_ready:bool;
-        pump_state:int^N_pump;
-        pump_control_state:bool^N_pump;
-        Failures : bool^5)
+		steam_boiler_waiting : bool;
+		level:int;
+		steam:int;
+		valve_status:int;
+		physical_units_ready:bool;
+		pump_state:int^N_pump;
+		pump_control_state:bool^N_pump;
+		Failures : bool^5)
 	returns (mode:int;
-          program_ready:bool;
-          open_pump:bool^N_pump;
-          close_pump:bool^N_pump;);
+		valve:bool;
+		program_ready:bool;
+		open_pump:bool^N_pump;
+		close_pump:bool^N_pump);
+
+var q_estime : int;
 
 let
 
@@ -43,9 +48,13 @@ mode = Initialization -> if (steam_boiler_waiting and pre(mode)=Initialization) 
 -- gestion des pompes --
 open_pump[0..(N_pump-1)] = false^N_pump -> if (mode=Initialization and steam_boiler_waiting) and (level<N1 and pumpOFF( N_pump, pump_state)) then true^N_pump
 					   else if (mode=Normal) and (level<N1 and pumpOFF( N_pump, pump_state)) then true^N_pump
+					   else if (mode=Degraded) and (level<N1 and pumpOFF( N_pump, pump_state)) then true^N_pump
+					   else if (mode=Rescue) and (Failures[3]=false) and (Failures[1]=false) and q_estime<N1 and pumpOFF( N_pump, pump_state) then true^N_pump
                                            else false^N_pump;
 close_pump[0..(N_pump-1)] = false^N_pump -> if (mode=Initialization and steam_boiler_waiting) and level>N1 and not(pumpOFF( N_pump, pump_state)) then true^N_pump
-					    else if (mode=Normal and steam_boiler_waiting) and level>N2 and not(pumpOFF( N_pump, pump_state)) then true^N_pump
+					    else if (mode=Normal) and level>N2 and not(pumpOFF( N_pump, pump_state)) then true^N_pump
+                                            else if (mode=Degraded) and level>N2 and not(pumpOFF( N_pump, pump_state)) then true^N_pump
+					    else if (mode=Rescue) and (Failures[3]=false) and (Failures[1]=false) and q_estime>N2 and not(pumpOFF( N_pump, pump_state)) then true^N_pump
                                             else false^N_pump;
 program_ready = false -> if (mode=Initialization) and (level>N1 and level<N2) then true
                           else false;
@@ -55,6 +64,11 @@ program_ready = false -> if (mode=Initialization) and (level>N1 and level<N2) th
 valve = false -> if mode=Initialization and level>N2 and valve_status>0 then true
 		 else false;
 
+--estimation quantité d'eau
+q_estime = 0 -> if (Failures[2]) and pre(q_estime)=0 then pre(level)
+		else if Failures[2] and pumpOFF( N_pump, pump_state) then pre(q_estime)-steam
+		else if Failures[2] and not(pumpOFF( N_pump, pump_state)) then pre(q_estime)+4*P-steam
+		else 0;
 tel
 
 -- fonction recursive --
