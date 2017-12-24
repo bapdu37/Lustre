@@ -44,6 +44,7 @@ mode = Initialization -> if (steam_boiler_waiting and pre(mode)=Initialization) 
                                   else if (pre(mode)=Normal and Failures[2]) then Rescue
 				     else if (pre(Mode)=Rescue) then Normal
                                          else if (pre(mode)=Normal) and (Failures[0] or Failures[1] or Failures[3]) then Degraded
+					   else if (pre(mode)=Degraded) and (not(Failures[0]) and not(Failures[1]) and not(Failures[3])) then Normal
                                             else (Initialization->pre(mode));
 
 -- gestion des pompes --
