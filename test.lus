@@ -2,8 +2,8 @@ const
 -- Boiler characteristics
   N_pump = 4;
   C = 30;    -- Maximal capacity
-  M1 = 10;   -- Minimal limit
-  M2 = 25;   -- Maximal limit
+  M1 = 8;   -- Minimal limit
+  M2 = 28;   -- Maximal limit
   N1 = 10;   -- Minimal normal
   N2 = 25;   -- Maximal normal
   P = 5;     -- Capacité nominal de chaque pompe
@@ -80,4 +80,11 @@ let
   result = with n=1 then pump[0]=0
           else (pump[0]=0 and pumpOFF(n-1, pump[1..n-1]));
 tel
+
+--ASSERTIONS
+ 
+
+--UMS CALL
+
+--PROPERTIES
 
