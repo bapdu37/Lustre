@@ -51,7 +51,8 @@ open_pump[0..(N_pump-1)] = false^N_pump -> if (mode=Initialization and steam_boi
 					   else if (mode=Degraded) and (level<N1 and pumpOFF( N_pump, pump_state)) then true^N_pump
 					   else if (mode=Rescue) and (Failures[3]=false) and (Failures[1]=false) and q_estime<N1 and pumpOFF( N_pump, pump_state) then true^N_pump
                                            else false^N_pump;
-close_pump[0..(N_pump-1)] = false^N_pump -> if (mode=Initialization and steam_boiler_waiting) and level>N1 and not(pumpOFF( N_pump, pump_state)) then true^N_pump
+close_pump[0..(N_pump-1)] = false^N_pump -> if (mode=Emergency_stop) then true_pump
+					    else if (mode=Initialization and steam_boiler_waiting) and level>N1 and not(pumpOFF( N_pump, pump_state)) then true^N_pump
 					    else if (mode=Normal) and level>N2 and not(pumpOFF( N_pump, pump_state)) then true^N_pump
                                             else if (mode=Degraded) and level>N2 and not(pumpOFF( N_pump, pump_state)) then true^N_pump
 					    else if (mode=Rescue) and (Failures[3]=false) and (Failures[1]=false) and q_estime>N2 and not(pumpOFF( N_pump, pump_state)) then true^N_pump
@@ -61,7 +62,8 @@ program_ready = false -> if (mode=Initialization) and (level>N1 and level<N2) th
 
 -- gestion de la valve --
 -- Entrée valve_status : valve fermé quand supérieur à 0 et valve ouverte quand inférieur à 0
-valve = false -> if mode=Initialization and level>N2 and valve_status>0 then true
+valve = false -> if mode=Emergency_stop then true
+		 else if mode=Initialization and level>N2 and valve_status>0 then true
 		 else false;
 
 --estimation quantité d'eau
